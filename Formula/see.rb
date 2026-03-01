@@ -6,9 +6,9 @@ class See < Formula
   homepage "https://s.ee"
   license "MIT"
 
-  SEE_VERSION = "1.0.0"
-  SHA256_INTEL = "444720f2b8059d0aa23a8e4ed04b0804ddc0d0f08a7eabeda74a8f628d14b0de"
-  SHA256_ARM = "3359fafecac790e834beebedafc343ee8f3065ee1a51c8c61749d7dbc718fb7c"
+  SEE_VERSION = "1.2.0"
+  SHA256_INTEL = "054d5ba6e215d91d5ca283c9a8dad51f6cfc39417ef6102dc5407c6cfa011f1e"
+  SHA256_ARM = "379ad0b404634a72af26c89a4f8052623e9fa6dbd9b4fe8575c3fe976ffe608b"
   BASE_URL = "https://github.com/sdotee/cli/releases/download/v#{SEE_VERSION}"
 
   version SEE_VERSION

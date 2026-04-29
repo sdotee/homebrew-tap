@@ -6,11 +6,25 @@ Homebrew tap for sdotee projects.
 
 ```bash
 brew tap sdotee/homebrew-tap
+```
+
+### CLI tool
+
+```bash
 brew install see
 ```
 
-for more information about the `see` command, visit the [see project page](https://github.com/sdotee/cli).
+For more information about the `see` command, visit the [see project page](https://github.com/sdotee/cli).
 
-## Formulas
+### macOS desktop app
 
-- [see](Formula/see.rb)
+```bash
+brew install --cask see-desktop
+```
+
+For more information, visit the [S.EE app page](https://github.com/sdotee/app).
+
+## Contents
+
+- [see](Formula/see.rb) — `see` CLI tool
+- [see-desktop](Casks/see-desktop.rb) — S.EE macOS desktop app (DMG)

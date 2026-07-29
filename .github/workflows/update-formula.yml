@@ -3,20 +3,39 @@ name: Update Formula and Cask
 on:
   schedule:
     - cron: "0 8 * * *" # Daily at 08:00 UTC
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+
+concurrency:
+  group: update-formula
+  cancel-in-progress: false
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
+    timeout-minutes: 20
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
 
       - name: Run update script
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: bash update.sh
 
+      - name: Validate Formula and Cask
+        run: |
+          brew style Formula/see.rb Casks/see-desktop.rb
+          brew audit --strict --online --formula see
+          brew audit --strict --online --cask see-desktop
+
       - name: Commit and push if changed
+        env:
+          BRANCH_NAME: ${{ github.event.repository.default_branch }}
         run: |
           git diff --quiet Formula/see.rb Casks/see-desktop.rb && exit 0
           git config user.name "github-actions[bot]"
@@ -32,4 +51,4 @@ jobs:
             MSG="chore: update see to v${FORMULA_VER}, see-desktop to v${CASK_VER}"
           fi
           git commit -m "$MSG"
-          git push
+          git push origin "HEAD:${BRANCH_NAME}"

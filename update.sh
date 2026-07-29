@@ -24,7 +24,15 @@ sha256() {
 }
 
 latest_tag() {
-    curl -s "https://api.github.com/repos/$1/releases/latest" \
+    local curl_args=(-fsSL --retry 3)
+    if [ -n "${GH_TOKEN:-}" ]; then
+        curl_args+=(
+            -H "Authorization: Bearer ${GH_TOKEN}"
+            -H "X-GitHub-Api-Version: 2022-11-28"
+        )
+    fi
+
+    curl "${curl_args[@]}" "https://api.github.com/repos/$1/releases/latest" \
         | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])"
 }
 
@@ -33,7 +41,7 @@ verify_sha() {
     local url="$1" expected="$2"
     local tmp
     tmp=$(mktemp)
-    curl -sL "$url" -o "$tmp"
+    curl -fsSL --retry 3 "$url" -o "$tmp"
     local actual
     actual=$(sha256 "$tmp" | awk '{print $1}')
     rm -f "$tmp"
@@ -63,7 +71,7 @@ update_formula() {
     fi
 
     local checksums sha256_intel sha256_arm
-    checksums=$(curl -sL "https://github.com/${FORMULA_REPO}/releases/download/v${latest_version}/checksums.txt")
+    checksums=$(curl -fsSL --retry 3 "https://github.com/${FORMULA_REPO}/releases/download/v${latest_version}/checksums.txt")
     sha256_intel=$(echo "$checksums" | grep 'see_Darwin_x86_64.tar.gz' | awk '{print $1}')
     sha256_arm=$(echo "$checksums" | grep 'see_Darwin_arm64.tar.gz' | awk '{print $1}')
 
@@ -101,7 +109,7 @@ update_cask() {
 
     local dmg_url published_sha actual_sha
     dmg_url="https://github.com/${CASK_REPO}/releases/download/v${latest_version}/SEE-${latest_version}.dmg"
-    published_sha=$(curl -sL "${dmg_url}.sha256" | awk '{print $1}')
+    published_sha=$(curl -fsSL --retry 3 "${dmg_url}.sha256" | awk '{print $1}')
 
     if [ -z "$published_sha" ] || [ ${#published_sha} -ne 64 ]; then
         echo "Error: could not fetch a valid SHA256 from ${dmg_url}.sha256" >&2

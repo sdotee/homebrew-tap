@@ -8,16 +8,16 @@ cask "see-desktop" do
   url "https://github.com/sdotee/app/releases/download/v#{version}/SEE-#{version}.dmg",
       verified: "github.com/sdotee/app/"
   name "S.EE"
-  desc "Native macOS client for the S.EE URL shortening, text sharing, and file hosting service"
-  homepage "https://s.ee"
+  desc "Client for the S.EE URL shortening, text sharing, and file hosting service"
+  homepage "https://s.ee/"
 
   livecheck do
     url "https://raw.githubusercontent.com/sdotee/app/main/macos/appcast.xml"
-    strategy :sparkle
+    strategy :sparkle, &:short_version
   end
 
   auto_updates true
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "SEE.app"
 

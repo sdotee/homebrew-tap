@@ -1,0 +1,85 @@
+name: Homebrew CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Formula/**"
+      - "Casks/**"
+      - "update.sh"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "Formula/**"
+      - "Casks/**"
+      - "update.sh"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+concurrency:
+  group: homebrew-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit tap
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+
+      - name: Check update script syntax
+        run: bash -n update.sh
+
+      - name: Check style
+        run: brew style Formula/see.rb Casks/see-desktop.rb
+
+      - name: Audit Formula
+        run: brew audit --strict --online --formula see
+
+      - name: Audit Cask
+        run: brew audit --strict --online --cask see-desktop
+
+  test-formula:
+    name: Test Formula
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+
+      - name: Prepare test environment
+        run: |
+          brew test-bot --only-cleanup-before
+          brew test-bot --only-setup
+
+      - name: Install and test Formula
+        run: brew test-bot --only-formulae
+
+  test-cask:
+    name: Test Cask
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+
+      - name: Install Cask
+        run: brew install --cask see-desktop
+
+      - name: Uninstall Cask
+        run: brew uninstall --cask see-desktop

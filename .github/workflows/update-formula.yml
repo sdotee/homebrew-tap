@@ -1,4 +1,4 @@
-name: Update Formula
+name: Update Formula and Cask
 
 on:
   schedule:
@@ -18,10 +18,18 @@ jobs:
 
       - name: Commit and push if changed
         run: |
-          git diff --quiet Formula/see.rb && exit 0
+          git diff --quiet Formula/see.rb Casks/see-desktop.rb && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/see.rb
-          VERSION=$(grep 'SEE_VERSION' Formula/see.rb | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          git commit -m "Update see to v${VERSION}"
+          git add Formula/see.rb Casks/see-desktop.rb
+          FORMULA_VER=$(grep 'SEE_VERSION' Formula/see.rb | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          CASK_VER=$(grep -E '^  version ' Casks/see-desktop.rb | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if git diff --cached --quiet Formula/see.rb && ! git diff --cached --quiet Casks/see-desktop.rb; then
+            MSG="chore: update see-desktop cask to v${CASK_VER}"
+          elif ! git diff --cached --quiet Formula/see.rb && git diff --cached --quiet Casks/see-desktop.rb; then
+            MSG="chore: update see formula to v${FORMULA_VER}"
+          else
+            MSG="chore: update see to v${FORMULA_VER}, see-desktop to v${CASK_VER}"
+          fi
+          git commit -m "$MSG"
           git push

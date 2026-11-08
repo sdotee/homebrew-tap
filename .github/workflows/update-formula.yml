@@ -11,16 +11,16 @@ concurrency:
 
 jobs:
   update:
-    runs-on: macos-14
+    runs-on: macos-latest
     timeout-minutes: 20
     permissions:
       contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+        uses: Homebrew/actions/setup-homebrew@c262868c096d909fc278daa87ed9772967331ea3 # 2026.11.02.1
 
       - name: Run update script
         env:
@@ -33,22 +33,32 @@ jobs:
           brew audit --strict --online --formula see
           brew audit --strict --online --cask see-desktop
 
-      - name: Commit and push if changed
+      - name: Record check timestamp
+        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/LAST_CHECK
+
+      - name: Commit and push
         env:
           BRANCH_NAME: ${{ github.event.repository.default_branch }}
         run: |
-          git diff --quiet Formula/see.rb Casks/see-desktop.rb && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/see.rb Casks/see-desktop.rb
+          git add Formula/see.rb Casks/see-desktop.rb .github/LAST_CHECK
           FORMULA_VER=$(grep 'SEE_VERSION' Formula/see.rb | head -1 | sed 's/.*"\(.*\)".*/\1/')
           CASK_VER=$(grep -E '^  version ' Casks/see-desktop.rb | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          if git diff --cached --quiet Formula/see.rb && ! git diff --cached --quiet Casks/see-desktop.rb; then
-            MSG="chore: update see-desktop cask to v${CASK_VER}"
-          elif ! git diff --cached --quiet Formula/see.rb && git diff --cached --quiet Casks/see-desktop.rb; then
-            MSG="chore: update see formula to v${FORMULA_VER}"
-          else
+          FORMULA_CHANGED=false
+          CASK_CHANGED=false
+          git diff --cached --quiet Formula/see.rb || FORMULA_CHANGED=true
+          git diff --cached --quiet Casks/see-desktop.rb || CASK_CHANGED=true
+          if $FORMULA_CHANGED && $CASK_CHANGED; then
             MSG="chore: update see to v${FORMULA_VER}, see-desktop to v${CASK_VER}"
+          elif $FORMULA_CHANGED; then
+            MSG="chore: update see formula to v${FORMULA_VER}"
+          elif $CASK_CHANGED; then
+            MSG="chore: update see-desktop cask to v${CASK_VER}"
+          else
+            # No new release: commit the timestamp anyway so the repo stays
+            # active and GitHub doesn't disable this scheduled workflow after 60 days.
+            MSG="chore: daily version check $(date -u +%Y-%m-%d)"
           fi
           git commit -m "$MSG"
           git push origin "HEAD:${BRANCH_NAME}"

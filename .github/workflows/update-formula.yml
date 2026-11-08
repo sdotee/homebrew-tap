@@ -11,7 +11,8 @@ concurrency:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    # macOS: the formula only defines macOS URLs, so brew audit fails on Linux
+    runs-on: macos-latest
     timeout-minutes: 20
     permissions:
       contents: write
@@ -48,6 +49,11 @@ jobs:
             MSG="chore: daily version check $(date -u +%Y-%m-%d)"
           fi
           echo "message=${MSG}" >> "$GITHUB_OUTPUT"
+
+      # checkout@v7 keeps credentials outside .git/config, which git on the
+      # macOS runner doesn't pick up; set the token on the remote explicitly.
+      - name: Configure push credentials
+        run: git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
 
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:

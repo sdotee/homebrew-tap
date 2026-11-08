@@ -50,12 +50,13 @@ jobs:
           fi
           echo "message=${MSG}" >> "$GITHUB_OUTPUT"
 
-      # checkout@v7 keeps credentials outside .git/config, which git on the
-      # macOS runner doesn't pick up; set the token on the remote explicitly.
+      # setup-homebrew re-links this checkout as a tap, which drops the
+      # credentials and upstream from actions/checkout; set them explicitly.
       - name: Configure push credentials
         run: git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
 
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: ${{ steps.msg.outputs.message }}
+          branch: ${{ github.event.repository.default_branch }}
           file_pattern: "Formula/see.rb Casks/see-desktop.rb .github/LAST_CHECK"

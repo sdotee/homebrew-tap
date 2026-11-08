@@ -65,7 +65,7 @@ jobs:
           brew test-bot --only-setup
 
       - name: Install and test Formula
-        run: brew test-bot --only-formulae
+        run: brew test-bot --only-formulae sdotee/tap/see
 
   test-cask:
     name: Test Cask
